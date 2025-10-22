@@ -1,0 +1,17 @@
+# Fedora 43 bootc base (default) "full" image
+
+# FROM quay.io/fedora/fedora-bootc:43
+FROM quay.io/fedora-ostree-desktops/silverblue:43
+
+RUN dnf swap --assumeyes --allowerasing nano vim-default-editor
+
+# RUN <<EORUN
+#     # https://www.mankier.com/1/gpg#Files-GNUPGHOME
+#     export GNUPGHOME="/tmp/.gnupg"
+# 
+#     dnf install --assumeyes --refresh \
+#     qemu-img \
+#     qemu-kvm
+# 
+#     dnf clean all
+# EORUN

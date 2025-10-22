@@ -1,0 +1,56 @@
+# Bootable container image auto-build config file
+
+# Container images
+# Including the image tag is mandatory
+[images]
+# The location from which to pull the container image
+cosign = "ghcr.io/sigstore/cosign/cosign:latest"
+# os = "quay.io/fedora/fedora-bootc:43"
+os = "quay.io/fedora-ostree-desktops/silverblue:43"
+
+## Verify container images
+[cosign.verify]
+verify = true
+os-verify-key = "https://gitlab.com/fedora/ostree/ci-test/-/raw/main/quay.io-fedora-ostree-desktops.pub"
+
+## Build an container image
+[build]
+# A Containerfile to build from
+# `dockerfile` can be either absolute or relative path
+dockerfile = "examples/Containerfile"
+# Name (tag) for the resulting image
+# tag = "localhost/fedora-bootc:43-build"
+tag = "localhost/fedora-silverblue:43-build"
+# Remove intermediate image
+remove-intermediate = true
+# Display the full log after the image build process is complete
+log = true
+## Build the labeled container image
+[build.labels]
+add-labels = true
+# Name (tag) for the resulting image
+# tag = "localhost/fedora-bootc:43"
+tag = "localhost/fedora-silverblue:43"
+# Display the full log after the image build process is complete
+log = true
+
+## Generate a new container image with split, reproducible, chunked layers
+[rechunk]
+# Configure the number of output layers
+max-layers = 96
+# Operate on this image in the container storage
+# from-image = "localhost/fedora-bootc:43-build"
+from-image = "localhost/fedora-silverblue:43-build"
+# Output a new image to the container storage
+# to-image = "localhost/fedora-bootc:43-rechunked"
+to-image = "localhost/fedora-silverblue:43-rechunked"
+# Remove intermediate image
+remove-intermediate = true
+
+## Add labels to container image
+[labels]
+"org.opencontainers.image.version" = false
+"org.opencontainers.image.title" = false
+"org.opencontainers.image.description" = false
+"org.opencontainers.image.source" = "https://github.com/GitHubAtomLearn/fedora-silverblue"
+"org.opencontainers.image.licenses" = "MIT"
