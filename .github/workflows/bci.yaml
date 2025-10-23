@@ -1,0 +1,176 @@
+name: "Build container image"
+
+env:
+  NAME: "bci"
+  REGISTRY: "quay.io/operatement"
+  # BASEIMAGE: "quay.io/fedora-ostree-desktops/silverblue:43"
+  # Temporary switch to quay.io/fedora/fedora-silverblue:43
+  # BASEIMAGE: "quay.io/fedora/fedora-silverblue:43"
+
+on:
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'bci/**'
+      - '.github/workflows/bci.yaml'
+
+  push:
+    branches:
+      - main
+    paths:
+      - 'bci/**'
+      - '.github/workflows/bci.yaml'
+
+  schedule:
+    - cron: '0 4 * * *'
+    # - cron: '30 13 * * *'
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Override version'
+        required: false
+        default: ''
+
+permissions: read-all
+
+# Prevent multiple workflow runs from racing to ensure that pushes are made
+# sequentialy for the main branch. Also cancel in progress workflow runs for
+# pull requests only.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
+
+jobs:
+  build-push-image:
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/podman/stable
+      options: "--security-opt=label=disable --privileged --user 0:0 --device=/dev/kvm --device=/dev/fuse \
+            --volume /:/run/host:rw --volume /mnt:/mnt --volume /var/run/docker.sock:/var/run/docker.sock \
+            --workdir=/mnt"
+    steps:
+
+      - name: Prepare the graphroot storage location
+        shell: bash
+        run: |
+          # Bind mount /mnt/containers over /var/lib/containers
+          set -xeuo pipefail
+
+          sudo ls -lah /var/lib/containers
+          sudo mkdir --parents /mnt/containers
+          sudo mount --bind /mnt/containers /var/lib/containers
+
+          echo -e "\nAvailable disk storage:"
+          sudo df --human-readable /var/lib/containers
+          sudo df --human-readable /mnt/containers
+          sudo lsblk --output NAME,PATH,TYPE,FSTYPE,SIZE,FSSIZE,FSUSED,FSAVAIL,FSUSE%,MOUNTPOINTS
+
+      - name: Fixup GitHub homedir
+        run: |
+          set -xeuo pipefail
+          mkdir -p /github/home/.docker/
+
+      - name: Install tools in the container
+        run: |
+          set -xeuo pipefail
+          dnf --refresh install -y \
+            git-core jq rpm-ostree buildah skopeo \
+            --exclude container-selinux --no-docs
+          dnf clean all
+
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      # - name: Figure out version
+      #   id: version
+      #   run: |
+      #     set -xexo pipefail
+      #     if [[ -n ${VERSION} ]]; then
+      #       version="${VERSION}"
+      #     else
+      #       version_base="$(skopeo inspect docker://${BASEIMAGE} | jq -r '.Labels."org.opencontainers.image.version"')"
+      #       version_derived="$(skopeo inspect docker://${REGISTRY}/${NAME} | jq -r '.Labels."org.opencontainers.image.version"' || true)"
+      #       if [[ -z "${version_derived}" ]]; then
+      #         version="${version_base}"
+      #       elif [[ "${version_base}" == "${version_derived}" ]]; then
+      #         patch="${version_base##*\.}"
+      #         ((patch++)) || true
+      #         version="${version_base%\.*}.${patch}"
+      #       else
+      #         version="${version_base}"
+      #       fi
+      #     fi
+      #     echo "Using version: ${version}"
+      #     echo "version=${version}" >> "$GITHUB_OUTPUT"
+      #   env:
+      #     VERSION: ${{ inputs.version }}
+
+      - name: Build bci container image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.NAME }}
+          tags: build
+          containerfiles: ${{ env.NAME }}/Containerfile
+          context: ${{ env.NAME }}
+          layers: false
+          oci: true
+
+      - name: Write NOP Containerfile
+        run: |
+          set -xexo pipefail
+          echo "FROM localhost/${NAME}:build" > ${NAME}/Containerfile-labels
+
+      - name: Add labels to container image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.NAME }}
+          tags: latest
+          containerfiles: ${{ env.NAME }}/Containerfile-labels
+          context: ${{ env.NAME }}
+          layers: false
+          oci: true
+          labels: |
+            org.opencontainers.image.title="Build container image"
+            org.opencontainers.image.description="Build Fedora bootable container images locally"
+            org.opencontainers.image.source="https://github.com/GitHubAtomLearn/bci"
+            org.opencontainers.image.licenses="MIT"
+          # org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+      # - name: Install cosign
+      #   uses: sigstore/cosign-installer@v4.0.0
+      #   if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+
+      - name: Login to container registry
+        uses: redhat-actions/podman-login@v1
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.BOT_USERNAME }}
+          password: ${{ secrets.BOT_SECRET }}
+          auth_file_path: /tmp/auth.json
+
+      - name: Push bci image to container registry
+        uses: redhat-actions/push-to-registry@v2
+        id: push
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        with:
+          username: ${{ secrets.BOT_USERNAME }}
+          password: ${{ secrets.BOT_SECRET }}
+          image: ${{ env.NAME }}
+          registry: ${{ env.REGISTRY }}
+          tags: 'latest'
+          extra-args: |
+            --compression-format=zstd
+          # --compression-level=19
+
+      # - name: Sign bci container image
+      #   if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+      #   run: |
+      #     cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.NAME }}@${{ steps.push.outputs.digest }}
+      #   env:
+      #     COSIGN_EXPERIMENTAL: false
+      #     COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
