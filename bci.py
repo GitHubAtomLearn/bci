@@ -444,8 +444,11 @@ def run_rm_intermediate_images(args):
 
 def run_auto_build(args):
 
-    with open(args.config_file, "rb") as file:
-        args_dict = tomllib.load(file)
+    try:
+        with open(args.config_file, "rb") as file:
+            args_dict = tomllib.load(file)
+    except FileNotFoundError as error:
+        raise SystemExit(f"\n File not found: {error}\n")
     # print(f"\n args_dict: {type(args_dict)} {args_dict}\n")
     args = args_class_dict(args_dict)
     run_pull(args)
