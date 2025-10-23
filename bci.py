@@ -16,21 +16,27 @@ def main():
     if os.getuid() != 0:
         raise SystemExit(f"\n Root access is required to perform actions on bootable containers.\n")
 
-
-    try:
-        podman_socket_active_state = subprocess.run(
-            ["systemctl", "show", "podman.socket", "-P", "ActiveState"], 
-            capture_output=True, text=True, check=True).stdout.strip("\n")
-        # print(f"Podman socket active state: {podman_socket_active_state}")
-    except subprocess.CalledProcessError as error:
-        print(f"\n Error executing command: {error}\n")
-        raise SystemExit()
-    try:
-        if podman_socket_active_state != "active":
-            subprocess.run(["systemctl", "start", "podman.socket"], check=True)
-    except subprocess.CalledProcessError as error:
-        print(f"\n Error executing command: {error}\n")
-        raise SystemExit()
+    script_file_name = PosixPath(__file__).name
+    # print(f"\n script_file_name: {type(script_file_name)} {script_file_name}\n")
+    current_script_path = PosixPath(__file__).resolve()
+    # print(f"\n current_script_path: {type(current_script_path)} {current_script_path}\n")
+    container_script_path = PurePosixPath(f"/opt/bci/{script_file_name}")
+    # print(f"\n container_script_path: {type(container_script_path)} {container_script_path}\n")
+    if container_script_path != current_script_path:
+        try:
+            podman_socket_active_state = subprocess.run(
+                ["systemctl", "show", "podman.socket", "-P", "ActiveState"], 
+                capture_output=True, text=True, check=True).stdout.strip("\n")
+            # print(f"Podman socket active state: {podman_socket_active_state}")
+        except subprocess.CalledProcessError as error:
+            print(f"\n Error executing command: {error}\n")
+            raise SystemExit()
+        try:
+            if podman_socket_active_state != "active":
+                subprocess.run(["systemctl", "start", "podman.socket"], check=True)
+        except subprocess.CalledProcessError as error:
+            print(f"\n Error executing command: {error}\n")
+            raise SystemExit()
 
 
     parser = argparse.ArgumentParser(
