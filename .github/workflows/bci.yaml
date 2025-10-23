@@ -108,6 +108,12 @@ jobs:
       #     echo "version=${version}" >> "$GITHUB_OUTPUT"
       #   env:
       #     VERSION: ${{ inputs.version }}
+      
+      # - name: List directory contents
+      #   run: ls -Zlathri
+
+      - name: List contents of directories in a tree-like format
+        run: tree -a /__w
 
       - name: Build bci container image
         uses: redhat-actions/buildah-build@v2
