@@ -115,7 +115,7 @@ jobs:
           image: ${{ env.NAME }}
           tags: build
           # containerfiles: ${{ env.NAME }}/Containerfile
-          containerfiles: ./Containerfile
+          containerfiles: Containerfile
           context: ${{ env.NAME }}
           layers: false
           oci: true
@@ -123,7 +123,7 @@ jobs:
       - name: Write NOP Containerfile
         run: |
           set -xexo pipefail
-          echo "FROM localhost/${NAME}:build" > ./Containerfile-labels
+          echo "FROM localhost/${NAME}:build" > Containerfile-labels
         # echo "FROM localhost/${NAME}:build" > ${NAME}/Containerfile-labels
 
       - name: Add labels to container image
@@ -132,7 +132,7 @@ jobs:
           image: ${{ env.NAME }}
           tags: latest
           # containerfiles: ${{ env.NAME }}/Containerfile-labels
-          containerfiles: ./Containerfile-labels
+          containerfiles: Containerfile-labels
           context: ${{ env.NAME }}
           layers: false
           oci: true
