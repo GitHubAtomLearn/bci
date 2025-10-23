@@ -12,16 +12,16 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'bci/**'
-      - '.github/workflows/bci.yaml'
+    # paths:
+    #   - 'bci/**'
+    #   - '.github/workflows/bci.yaml'
 
   push:
     branches:
       - main
-    paths:
-      - 'bci/**'
-      - '.github/workflows/bci.yaml'
+    # paths:
+    #   - 'bci/**'
+    #   - '.github/workflows/bci.yaml'
 
   schedule:
     - cron: '0 4 * * *'
@@ -123,7 +123,7 @@ jobs:
           tags: build
           # containerfiles: ${{ env.NAME }}/Containerfile
           containerfiles: Containerfile
-          context: ${{ env.NAME }}
+          # context: ${{ env.NAME }}
           layers: false
           oci: true
 
@@ -140,7 +140,7 @@ jobs:
           tags: latest
           # containerfiles: ${{ env.NAME }}/Containerfile-labels
           containerfiles: Containerfile-labels
-          context: ${{ env.NAME }}
+          # context: ${{ env.NAME }}
           layers: false
           oci: true
           labels: |
