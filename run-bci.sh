@@ -34,9 +34,11 @@ function main() {
             --key ${1} \
             ${2}
     }
-    echo -e "\nVerifying ${image}..."
-    cosign_verify ${key} ${image}
-    echo -e "\n"
+    if ! [[ ${repository} =~ ^localhost/.* ]]; then
+        echo -e "\nVerifying ${image}..."
+        cosign_verify ${key} ${image}
+        echo -e "\n"
+    fi
 
     # podman image pull ${container_image}
     podman container run \
