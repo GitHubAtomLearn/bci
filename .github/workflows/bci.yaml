@@ -150,9 +150,9 @@ jobs:
             org.opencontainers.image.licenses="MIT"
           # org.opencontainers.image.version=${{ steps.version.outputs.version }}
 
-      # - name: Install cosign
-      #   uses: sigstore/cosign-installer@v4.0.0
-      #   if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.0.0
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
 
       - name: Login to container registry
         uses: redhat-actions/podman-login@v1
@@ -177,10 +177,10 @@ jobs:
             --compression-format=zstd
           # --compression-level=19
 
-      # - name: Sign bci container image
-      #   if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
-      #   run: |
-      #     cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.NAME }}@${{ steps.push.outputs.digest }}
-      #   env:
-      #     COSIGN_EXPERIMENTAL: false
-      #     COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      - name: Sign bci container image
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.NAME }}@${{ steps.push.outputs.digest }}
+        env:
+          COSIGN_EXPERIMENTAL: false
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}

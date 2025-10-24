@@ -16,8 +16,8 @@ function main() {
     fi
 
     name="bci"
-    repository="localhost/bci"
-    # repository="quay.io/operatement/bci"
+    # repository="localhost/bci"
+    repository="quay.io/operatement/bci"
     tag="latest"
     image=${repository}:${tag}
     # podman image pull ${container_image}
