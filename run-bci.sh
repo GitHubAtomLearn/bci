@@ -16,8 +16,8 @@ function main() {
     fi
 
     name="bci"
-    # repository="localhost/bci"
-    repository="quay.io/operatement/bci"
+    repository="localhost/bci"
+    # repository="quay.io/operatement/bci"
     tag="latest"
     image=${repository}:${tag}
     # podman image pull ${container_image}
@@ -26,7 +26,10 @@ function main() {
         --rm \
         --interactive \
         --tty \
+        --volume /var/lib/containers/storage:/var/lib/containers/storage \
         --volume /run/podman:/run/podman \
+        --volume "${PWD}":/pwd \
+        --workdir /pwd \
         --cap-add=sys_admin,mknod \
         --device=/dev/fuse \
         --security-opt label=disable \

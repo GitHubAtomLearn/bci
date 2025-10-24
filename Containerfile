@@ -2,7 +2,8 @@
 
 # First, build the application in the `/bci` directory
 
-FROM docker.io/alpine AS builder
+# FROM docker.io/alpine AS builder
+FROM quay.io/fedora/fedora-minimal:43 AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -40,14 +41,31 @@ WORKDIR /opt/bci
 
 COPY . /opt/bci
 
-RUN --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+# RUN --mount=type=bind,source=uv.lock,target=uv.lock \
+#     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+#     uv sync --no-install-local --no-install-project --no-install-workspace
+RUN --mount=type=bind,source=uv.lock,target=uv.lock,relabel=shared \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml,relabel=shared \
     uv sync --no-install-local --no-install-project --no-install-workspace
 
 
 # Then, use a final image without uv
 
-FROM docker.io/alpine
+# FROM docker.io/alpine
+FROM quay.io/fedora/fedora-minimal:43
+
+# Install rpm-ostree in the container
+# --setopt=install_weak_deps=False \
+# --exclude="container-selinux, bootc" \
+RUN <<EORUN
+    set -xeuo pipefail
+    dnf --refresh install --assumeyes --allowerasing \
+        --no-docs --disable-repo fedora-cisco-openh264 \
+        --setopt=install_weak_deps=False \
+        --exclude container-selinux \
+    rpm-ostree
+    dnf clean all
+EORUN
 
 # Copy the Python version
 COPY --from=builder /opt/python /opt/python
@@ -65,3 +83,11 @@ WORKDIR /opt/bci
 # Run the bci application by default
 # CMD ["/opt/bci/bci.py"]
 ENTRYPOINT ["/opt/bci/bci.py"]
+# CMD ["rpm-ostree",\
+#     "compose",\
+#     "build-chunked-oci",\
+#     "--bootc",\
+#     "--format-version=1",\
+#     "--max-layers 96",\
+#     "--from localhost/bci:build",\
+#     "--output containers-storage:localhost/bci:rechunked"]
