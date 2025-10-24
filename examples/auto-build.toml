@@ -5,7 +5,7 @@
 [images]
 # The location from which to pull the container image
 cosign = "ghcr.io/sigstore/cosign/cosign:latest"
-# os = "quay.io/fedora/fedora-bootc:43"
+# os = "quay.io/bootc-devel/fedora-bootc-rawhide-minimal:latest"
 os = "quay.io/fedora-ostree-desktops/silverblue:43"
 
 ## Verify container images

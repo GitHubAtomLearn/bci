@@ -20,6 +20,24 @@ function main() {
     repository="quay.io/operatement/bci"
     tag="latest"
     image=${repository}:${tag}
+    key="https://raw.githubusercontent.com/GitHubAtomLearn/bci/refs/heads/main/quay.io-operatement-bci.pub"
+
+    function cosign_verify() {
+        podman container run \
+            --pull newer \
+            --rm \
+            --interactive \
+            --tty \
+            --name cosign \
+            ghcr.io/sigstore/cosign/cosign:latest \
+            verify \
+            --key ${1} \
+            ${2}
+    }
+    echo -e "\nVerifying ${image}..."
+    cosign_verify ${key} ${image}
+    echo -e "\n"
+
     # podman image pull ${container_image}
     podman container run \
         --pull newer \
