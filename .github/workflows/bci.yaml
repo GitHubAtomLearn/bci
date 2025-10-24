@@ -177,6 +177,11 @@ jobs:
             --compression-format=zstd
           # --compression-level=19
 
+      - name: Print the outputs of the push action
+        run: |
+          echo "Image pushed to ${{ steps.push.outputs.registry-paths }}"
+          echo "The pushed image digest ${{ steps.push.outputs.digest }}"
+
       - name: Sign bci container image
         if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         run: |
