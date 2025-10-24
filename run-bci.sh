@@ -22,6 +22,8 @@ function main() {
     image=${repository}:${tag}
     key="https://raw.githubusercontent.com/GitHubAtomLearn/bci/refs/heads/main/quay.io-operatement-bci.pub"
 
+    podman image pull ${image}
+
     function cosign_verify() {
         podman container run \
             --pull newer \
@@ -40,7 +42,6 @@ function main() {
         echo -e "\n"
     fi
 
-    # podman image pull ${container_image}
     podman container run \
         --pull newer \
         --rm \
