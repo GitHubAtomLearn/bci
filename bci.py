@@ -164,7 +164,7 @@ def run_verify(args):
             print(f"{verify_cosign_image_output.rsplit("[")[0]}")
 
             os_image = args.images["os"]
-            if re.match(r"^localhost/.*", os_image):
+            if not re.match(r"^localhost/.*", os_image):
                 try:
                     # TODO: Check the user input (type)
                     # os_image = args.images["os"]
