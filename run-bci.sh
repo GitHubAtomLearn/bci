@@ -49,8 +49,8 @@ function main() {
         --tty \
         --volume /var/lib/containers/storage:/var/lib/containers/storage \
         --volume /run/podman:/run/podman \
-        --volume "${PWD}":/pwd \
-        --workdir /pwd \
+        --volume .:/data \
+        --workdir /data \
         --cap-add=sys_admin,mknod \
         --device=/dev/fuse \
         --security-opt label=disable \
@@ -58,6 +58,14 @@ function main() {
         ${image} \
         "${@}"
 }
+# --volume /dev:/dev \
+# --volume /run/udev:/run/udev \
+# --volume .:/data \
+# --workdir /data \
+
+# --volume "${PWD}":/pwd \
+# --workdir /pwd \
+
 # --volume .:/opt/bci \
 # --volume /opt/bci/.venv \
 # --privileged \

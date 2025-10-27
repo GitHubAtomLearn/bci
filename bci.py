@@ -163,41 +163,43 @@ def run_verify(args):
             # print(f"\n verify_cosign_image {type(verify_cosign_image_output)}:\n{verify_cosign_image_output}\n")
             print(f"{verify_cosign_image_output.rsplit("[")[0]}")
 
-            try:
-                # TODO: Check the user input (type)
-                os_image = args.images["os"]
-                os_verify_key = args.cosign["verify"]["os-verify-key"]
+            os_image = args.images["os"]
+            if re.match(r"^localhost/.*", os_image):
+                try:
+                    # TODO: Check the user input (type)
+                    # os_image = args.images["os"]
+                    os_verify_key = args.cosign["verify"]["os-verify-key"]
 
-                client_run_verify_image = client.containers.run(
-                    image=cosign_image,
-                    name="verify-image",
-                    command=[
-                        r"verify",
-                        r"--key",
-                        os_verify_key,
-                        os_image
-                    ],
-                    remove=True,
-                    tty=True,
-                    stdout=True,
-                    stderr=True
-                )
-            except podman.errors.exceptions.ContainerError as error:
-                raise SystemExit(f"\n Container Error: {error}\n")
-            except podman.errors.exceptions.ImageNotFound as error:
-                raise SystemExit(f"\n Image not found Error: {error}\n")
-            except podman.errors.exceptions.APIError as error:
-                raise SystemExit(f"\n API Error: {error}\n")
-            finally:
-                # TODO:
-                # API Error: 500 Server Error:
-                # Internal Server Error (creating container storage: the container name "verify-image" is already in use.
-                # You have to remove that container to be able to reuse that name: that name is already in use)
-                client.close()
+                    client_run_verify_image = client.containers.run(
+                        image=cosign_image,
+                        name="verify-image",
+                        command=[
+                            r"verify",
+                            r"--key",
+                            os_verify_key,
+                            os_image
+                        ],
+                        remove=True,
+                        tty=True,
+                        stdout=True,
+                        stderr=True
+                    )
+                except podman.errors.exceptions.ContainerError as error:
+                    raise SystemExit(f"\n Container Error: {error}\n")
+                except podman.errors.exceptions.ImageNotFound as error:
+                    raise SystemExit(f"\n Image not found Error: {error}\n")
+                except podman.errors.exceptions.APIError as error:
+                    raise SystemExit(f"\n API Error: {error}\n")
+                finally:
+                    # TODO:
+                    # API Error: 500 Server Error:
+                    # Internal Server Error (creating container storage: the container name "verify-image" is already in use.
+                    # You have to remove that container to be able to reuse that name: that name is already in use)
+                    client.close()
 
-            verify_image_output = client_run_verify_image.decode()
-            # print(f"\n verify_image_output {type(verify_image_output)}:\n{verify_image_output}\n")
-            print(f"{verify_image_output.rsplit("[")[0]}")
+                verify_image_output = client_run_verify_image.decode()
+                # print(f"\n verify_image_output {type(verify_image_output)}:\n{verify_image_output}\n")
+                print(f"{verify_image_output.rsplit("[")[0]}")
 
         else:
             client_connection_error()
@@ -226,8 +228,12 @@ def run_prune(args):
 
 
 def run_build(args):
-    if PosixPath(args.build["dockerfile"]).exists():
-        args_dockerfile_path = PurePosixPath(args.build["dockerfile"])
+    # print(f"\n dockerfile: {args.build["dockerfile"]}\n")
+    args_dockerfile_path = PurePosixPath(args.build["dockerfile"])
+    # print(f"\n args_dockerfile_path {type(args_dockerfile_path)} {args_dockerfile_path}\n")
+    # if PosixPath(args.build["dockerfile"]).exists():
+    if PosixPath(args_dockerfile_path).exists():
+        # args_dockerfile_path = PurePosixPath(args.build["dockerfile"])
         parent_path = args_dockerfile_path.parent
         # print(f"\n path.is_absolute(): {type(parent_path.is_absolute())} {parent_path.is_absolute()}\n")
         if parent_path.is_absolute():
@@ -241,7 +247,8 @@ def run_build(args):
             dockerfile = PurePosixPath(full_path/args_dockerfile_path.name)
             # print(f"\n dockerfile: {type(dockerfile)} {dockerfile}\n")
     else:
-        raise SystemExit(f"\n Image file not found.\n")
+        # raise SystemExit(f"\n Image file not found.\n")
+        raise SystemExit(f"\n Containerfile file not found.\n")
     tag = args.build["tag"]
     with podman.PodmanClient(base_url=libpod_uri()) as client:
         if client.ping():
@@ -366,7 +373,8 @@ def run_add_labels(args):
             dockerfile = PurePosixPath(full_path/args_dockerfile_path.name)
             print(f"\n dockerfile: {type(dockerfile)} {dockerfile}\n")
     else:
-        raise SystemExit(f"\n Image file not found.\n")
+        # raise SystemExit(f"\n Image file not found.\n")
+        raise SystemExit(f"\n Containerfile file not found.\n")
     tag = args.build["labels"]["tag"]
     with podman.PodmanClient(base_url=libpod_uri()) as client:
         if client.ping():
